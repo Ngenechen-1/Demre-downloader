@@ -1,25 +1,40 @@
-# 📚 Descargador Universal DEMRE (PAES / PDT / PSU)
+# 📚 Descargador Oficial PAES/PDT/PSU DEMRE
 
-Un script en Python rápido y automatizado para buscar, organizar y descargar pruebas oficiales, clavijeros, temarios y soluciones alojados en los servidores del DEMRE (2020 - 2026).
-
-> **CREDITOS:** Elias BISAGRA + Gemini AI XD
+Una herramienta CLI en Python para buscar, verificar y descargar de forma automatizada ensayos, modelos de prueba y clavijeros/resoluciones oficiales del DEMRE desde el año 2020 hasta el 2027.
 
 ---
 
-## 🌟 Características
-- **Velocidad Optimizada:** Filtra y consulta únicamente las URLs relevantes (~120 peticiones en lugar de +400).
-- **Soporte Histórico:** Compatibilidad total con servidores antiguos (`historico.demre.cl`) para años 2020 a 2022.
-- **Modos de Descarga:**
-  - `--all` (`-A`): Descarga todo el material del año seleccionado.
-  - `--everything` (`-E`): **Modo Acaparador.** Descarga toda la base histórica disponible (2020 a 2026).
-- **Organización Automática:** Clasifica archivos por Año, Materia y Tipo de Documento.
-- **Interfaz Limpia:** Barra de progreso dinámica, colores en terminal y salida sin errores al cancelar (`Ctrl + C`).
+## 🚀 Características
+
+* **Descargas unificadas:** Obtén archivos de Admisión Regular e Invierno.
+* **Soporte multivariable:** Procesa solicitudes agrupadas o asignaturas independientes.
+* **Organización automática:** Estructura los PDF descargados en carpetas por Año y Asignatura.
+* **Modo interactivo CLI:** Ejecución continua mediante línea de comandos personalizada.
 
 ---
 
-## 🚀 Instalación y Uso
+## 🛠️ Modos de Uso
 
-### 1. Clonar el repositorio
+El programa acepta los siguientes parámetros:
+
+* `-a` **Año de Proceso de Admisión:** `2020` a `2027`
+* `-m` **Materia / Asignatura:**
+  * `m1` | `m2` | `matematica` (Soporta sintaxis de PDT y PAES)
+  * `lectura` | `lenguaje` | `competencia lectora`
+  * `historia`
+  * `ciencias` *(Generalizador para Química, Física y Biología)*
+  * `quimica` | `fisica` | `biologia` *(Búsqueda independiente)*
+  * `ciencias-tp` | `tp` *(Módulo Técnico Profesional)*
+* `-t` **Tipo de Archivo:**
+  * `prueba` *(Modelos y ensayos completos)*
+  * `clavijero` *(Pautas de respuestas y resoluciones)*
+
+---
+
+## 💻 Ejemplos de Comandos
+
 ```bash
-git clone [https://github.com/TU_USUARIO/demre-downloader.git](https://github.com/TU_USUARIO/demre-downloader.git)
-cd demre-downloader
+PAES> -a 2025 -m m1 -t prueba
+PAES> -a 2023 -m ciencias -t prueba
+PAES> -a 2022 -m ciencias-tp -t prueba
+PAES> -a 2020 -m lenguaje -t clavijero
