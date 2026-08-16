@@ -1,368 +1,438 @@
-import argparse
+#!/usr/bin/env python3
 import os
-import re
 import sys
 import time
-import requests
+import argparse
+import shlex
+import urllib.request
+import urllib.error
+from pathlib import Path
 
-# Habilitar colores en Windows
-if os.name == 'nt':
-    try:
-        import colorama
-        colorama.init()
-    except ImportError:
-        os.system('')
+# --- CONFIGURACIÓN DE RUTAS DE ALMACENAMIENTO ---
+BASE_DIR = Path("DESCARGADOR DEMRE")
 
-CYAN = "\033[96m"
-GREEN = "\033[92m"
-YELLOW = "\033[93m"
-RED = "\033[91m"
-BOLD = "\033[1m"
-RESET = "\033[0m"
+# --- MENSAJES Y TEXTOS ESTÉTICOS ---
+MSG_WELCOME = (
+    "Holaaa, bienvenido al descargador de pruebas de la paes del demre :DD\n"
+    "Escribe -- help si requieres ayuda o... Hablame po!!1\n"
+    "-CREDITOS: ELIAS BISAGRA Y GEMINI AI XDDD\n"
+)
+MSG_SEARCHING = "Espera un poquito..."
+MSG_SUCCESS = "Ke disfruti tu estudio... Supongo uwu"
+MSG_CANCEL = "No se realizara ninguna descarga, dah..."
+MSG_FAIL = "Oh... Tuvimos un problema parece, ve si el formato del comando esta bien puesta o hablame porfiiss..."
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-}
-
-SUBJECT_KEYWORDS = {
-    "m1": ["matematica-1", "matematica1", "matematica_1", "m1", "matematica", "mate"],
-    "m2": ["matematica-2", "matematica2", "matematica_2", "m2", "matematica", "mate"],
-    "lectora": ["lectora", "lenguaje", "comp-lectora", "comp_lectora", "lengua"],
-    "historia": ["historia", "sociales", "hist", "cs-sociales", "historia-ciencias-sociales"],
-    "ciencias": ["ciencias", "biologia", "fisica", "quimica", "modulo-tp", "tecnico-profesional"]
-}
-
-SUBJECT_FOLDERS = {
-    "m1": "Matematica_1",
-    "m2": "Matematica_2",
-    "lectora": "Competencia_Lectora",
-    "historia": "Historia",
-    "ciencias": "Ciencias"
-}
-
-DATES_DB = {
+# --- BASE DE DATOS DE URLs SEGÚN EL AÑO Y MATERIA ---
+URL_DATABASE = {
+    "2027": {
+        "invierno": {
+            "m2": "2026-06-15",
+            "historia": "2026-06-17",
+            "ciencias-tp": "2026-06-17",
+            "competencia-lectora": "2026-06-17",
+            "biologia": "2026-06-16",
+            "quimica": "2026-06-16",
+            "fisica": "2026-06-16",
+            "m1": "2026-06-17",
+            "_clavijeros": "2026-06-17"
+        }
+    },
     "2026": {
-        "regular_pruebas": ["2026-25-11-25", "2026-25-12-04"],
-        "regular_clavijeros": ["2026-25-12-28", "2026-25-01-06"],
-        "regular_temarios": ["2026-25-03-20"],
-        "invierno_pruebas": ["2026-25-06-18"],
-        "invierno_clavijeros": ["2026-25-07-18"],
-        "invierno_temarios": ["2026-25-01-24"]
+        "invierno": {
+            "m1": "2025-06-16",
+            "competencia-lectora": "2025-06-17",
+            "ciencias-tp": "2025-06-17",
+            "historia": "2025-06-18",
+            "m2": "2025-06-18",
+            "fisica": "2025-06-17",
+            "quimica": "2025-06-17",
+            "biologia": "2025-06-17",
+            "_clavijeros": "2025-07-18"
+        },
+        "regular": {
+            "m2": "2025-12-01",
+            "competencia-lectora": "2025-12-02",
+            "ciencias-tp": "2025-12-02",
+            "fisica": "2025-12-02",
+            "quimica": "2025-12-02",
+            "biologia": "2025-12-02",
+            "historia": "2025-12-03",
+            "m1": "2025-12-03",
+            "_clavijeros": "2026-01-05"
+        }
     },
     "2025": {
-        "regular_pruebas": ["2025-24-12-02", "2025-24-12-03", "2025-24-12-04"],
-        "regular_clavijeros": ["2025-25-01-06", "2025-24-12-28"],
-        "regular_temarios": ["2025-24-03-20", "2025-24-01-24"],
-        "invierno_pruebas": ["2025-24-06-19", "2025-24-06-20"],
-        "invierno_clavijeros": ["2025-24-07-05"],
-        "invierno_temarios": ["2025-24-01-20"]
+        "regular": {
+            "m2": "2024-12-04",
+            "competencia-lectora": "2024-12-03",
+            "ciencias-tp": "2024-12-03",
+            "fisica": "2024-12-03",
+            "quimica": "2024-12-03",
+            "biologia": "2024-12-03",
+            "historia": "2024-12-04",
+            "m1": "2024-12-04",
+            "_clavijeros": "2025-01-06"
+        },
+        "invierno": {
+            "m2": "2024-06-17",
+            "competencia-lectora": "2024-06-18",
+            "ciencias-tp": "2024-06-18",
+            "fisica": "2024-06-18",
+            "quimica": "2024-06-18",
+            "biologia": "2024-06-18",
+            "historia": "2024-06-19",
+            "m1": "2024-06-19",
+            "_clavijeros": "2024-07-19"
+        }
     },
     "2024": {
-        "regular_pruebas": ["2024-23-11-27", "2024-23-11-28", "2024-23-11-29"],
-        "regular_clavijeros": ["2024-23-12-28"],
-        "regular_temarios": ["2024-23-03-23"],
-        "invierno_pruebas": ["2024-23-06-19", "2024-23-06-20", "2024-23-06-21", "2024-23-06-22"],
-        "invierno_clavijeros": ["2024-23-07-05"],
-        "invierno_temarios": ["2024-23-01-23"]
+        "regular": {
+            "m2": "2023-11-27",
+            "competencia-lectora": "2023-11-28",
+            "ciencias-tp": "2023-11-28",
+            "fisica": "2023-11-28",
+            "quimica": "2023-11-28",
+            "biologia": "2023-11-28",
+            "historia": "2023-11-29",
+            "m1": "2023-11-29",
+            "_clavijeros": "2023-12-28"
+        },
+        "invierno": {
+            "m2": "2023-06-19",
+            "competencia-lectora": "2023-06-20",
+            "ciencias-tp": "2023-06-20",
+            "fisica": "2023-06-20",
+            "quimica": "2023-06-20",
+            "biologia": "2023-06-20",
+            "historia": "2023-06-22",
+            "m1": "2023-06-22",
+            "_clavijeros": "2023-07-20"
+        }
     },
     "2023": {
-        "regular_pruebas": ["2023-22-11-28", "2023-22-11-29", "2023-22-11-30"],
-        "regular_clavijeros": ["2023-22-12-29"],
-        "regular_temarios": ["2023-22-01-26"],
-        "invierno_pruebas": ["2023-23-06-19", "2023-22-04-07"],
-        "invierno_clavijeros": ["2023-22-08-03"],
-        "invierno_temarios": ["2023-22-02-26"]
+        "regular": {
+            "m2": "2022-11-29",
+            "competencia-lectora": "2022-11-29",
+            "ciencias-tp": "2022-11-28",
+            "fisica": "2022-11-28",
+            "quimica": "2022-11-28",
+            "biologia": "2022-11-28",
+            "ciencias": "2022-11-28",
+            "historia": "2022-11-30",
+            "m1": "2022-11-30",
+            "_clavijeros": "2022-12-29"
+        },
+        "invierno": {
+            "competencia-lectora": "2022-07-04",
+            "ciencias-tp": "2022-07-04",
+            "fisica": "2022-07-04",
+            "quimica": "2022-07-04",
+            "biologia": "2022-07-04",
+            "ciencias": "2022-07-04",
+            "matematica": "2022-07-05",
+            "historia": "2022-07-05",
+            "_clavijeros": "2022-08-03"
+        }
     },
     "2022": {
-        "regular_pruebas": ["2022-21-07-19", "2022-21-06-24", "2022-21-03-31"],
-        "regular_clavijeros": ["2022-21-08-05", "2022-21-06-24"],
-        "regular_temarios": ["2022-21-04-26"]
+        "regular": {
+            "matematica": "2021-06-24",
+            "comprension-lectora": "2021-07-08",
+            "ciencias-tp": "2021-07-15",
+            "fisica": "2021-07-15",
+            "quimica": "2021-07-15",
+            "biologia": "2021-07-15",
+            "ciencias": "2021-07-15",
+            "_resoluciones": "2021-08-05"
+        }
     },
     "2021": {
-        "regular_pruebas": ["2021-20-06-11", "2021-20-07-29", "2021-20-04-23", "2021-20-03-12"],
-        "regular_clavijeros": ["2021-20-06-11", "2021-20-07-29"],
-        "regular_temarios": ["2021-20-04-23", "2021-20-03-12"]
+        "regular": {
+            "quimica": "2020-06-11",
+            "fisica": "2020-06-11",
+            "biologia": "2020-06-11",
+            "ciencias": "2020-06-11",
+            "ciencias-tp": "2020-06-11",
+            "comprension-lectora": "2020-06-11",
+            "matematica": "2020-06-11",
+            "_todas": "2020-06-11",
+            "_resoluciones": "2020-07-29"
+        }
     },
     "2020": {
-        "regular_pruebas": ["2020-19-08-01", "2020-19-01-06", "2020-19-04-11", "2019-19-08-01"],
-        "regular_clavijeros": ["2020-19-08-01", "2020-19-01-06"],
-        "regular_temarios": ["2020-19-04-11", "2019-19-04-11"]
+        "regular": {
+            "quimica": "2019-08-01",
+            "fisica": "2019-08-01",
+            "biologia": "2019-08-01",
+            "ciencias": "2019-08-01",
+            "ciencias-tp": "2019-08-01",
+            "lenguaje": "2019-08-01",
+            "matematica": "2019-08-01",
+            "_todas": "2019-08-01",
+            "_resoluciones": "2019-08-01"
+        }
     }
 }
 
-PATTERNS_SUFFIXES = [
-    "paes-regular-{subj}-p{yr}.pdf",
-    "paes-regular-oficial-{subj}-p{yr}.pdf",
-    "clavijero-paes-regular-{subj}.pdf",
-    "temario-paes-regular-{subj}.pdf",
-    "pdt-regular-{subj}-p{yr}.pdf",
-    "pdt-invierno-{subj}-p{yr}.pdf",
-    "clavijero-pdt-{subj}.pdf",
-    "temario-pdt-{subj}.pdf",
-    "modelo-{subj}.pdf",
-    "modelo-{subj}-p{yr}.pdf",
-    "modelo-prueba-{subj}.pdf",
-    "resolucion-modelo-{subj}.pdf",
-    "resolucion-modelo-prueba-{subj}.pdf",
-    "claves-modelo-{subj}.pdf",
-    "significado-claves-modelo-{subj}.pdf",
-    "temario-{subj}-p{yr}.pdf",
-    "temario-{subj}.pdf",
-    "temario-psu-{subj}.pdf"
-]
+def print_help():
+    help_text = """
+GLOSARIO Y MODO DE USO:
+  -a  Año de proceso de admisión (2020 a 2027)
+  -m  Materia a buscar:
+      - Lectura / Comprension Lectora / Lenguaje
+      - M1 / M2 / Matematica / Matematicas (Generalizador)
+      - Historia
+      - Ciencias (Generalizador solo para Química, Física y Biología)
+      - Quimica / Fisica / Biologia (Menciones independientes)
+      - Ciencias-TP / TP / Cienciastp (Módulo Técnico Profesional independiente)
+  -t  Tipo de archivo:
+      - prueba (Busca la prueba completa, incluye Regular e Invierno)
+      - clavijero (Busca pautas, claves o resoluciones de módulos)
 
-SUBJECT_SLUGS = {
-    "m1": ["matematica", "matematica1", "competencia-matematica1"],
-    "m2": ["matematica2", "competencia-matematica2", "matematica"],
-    "lectora": ["competencia-lectora", "lenguaje", "lenguaje-y-comunicacion"],
-    "historia": ["historia", "historia-ciencias-sociales", "historia-geografia-y-ciencias-sociales"],
-    "ciencias": [
-        "ciencias", "ciencias-biologia", "ciencias-fisica", "ciencias-quimica", 
-        "ciencias-tp", "biologia", "quimica", "fisica", "modulo-tp"
-    ]
-}
+EJEMPLOS DE USO:
+  -a 2023 -m ciencias -t prueba      (Descarga Química, Física y Biología)
+  -a 2021 -m quimica -t prueba       (Descarga la prueba/modelo de Química)
+  -a 2022 -m ciencias-tp -t prueba   (Descarga únicamente Ciencias TP)
+  -a 2020 -m fisica -t clavijero     (Descarga la resolución de Física)
+"""
+    print(help_text)
 
-def get_desktop_path():
-    home = os.path.expanduser("~")
-    for name in ["Escritorio", "Desktop"]:
-        path = os.path.join(home, name)
-        if os.path.exists(path):
-            return path
-    return home
-
-def classify_document(url_or_name):
-    txt = url_or_name.lower()
+def normalizar_materia(materia_raw, ano):
+    m = materia_raw.lower().strip()
+    ano_int = int(ano)
     
-    if "temario" in txt:
-        doc_type = "Temarios"
-    elif "resolucion" in txt:
-        doc_type = "Resolucion_Modulos"
-    elif any(k in txt for k in ["clavijero", "solucionario", "clave", "claves", "respuestas"]):
-        doc_type = "Clavijeros"
-    elif any(k in txt for k in ["modulo", "modelo"]):
-        doc_type = "Modulos_de_Prueba"
-    else:
-        doc_type = "Pruebas_Oficiales"
-
-    modality = "Invierno" if "invierno" in txt else "Regular"
-    return f"{doc_type}_{modality}"
-
-def generate_urls_for_year(year):
-    if year not in DATES_DB:
-        return []
-
-    urls = set()
-    dates_entry = DATES_DB[year]
-    all_dates = []
-    for category in dates_entry.values():
-        all_dates.extend(category)
-
-    bases = [
-        "https://demre.cl/publicaciones/pdf/",
-        "https://historico.demre.cl/publicaciones/pdf/"
-    ]
-
-    for base in bases:
-        for prefix_date in all_dates:
-            for subj_key, slugs in SUBJECT_SLUGS.items():
-                for slug in slugs:
-                    for pat in PATTERNS_SUFFIXES:
-                        filename = pat.format(subj=slug, yr=year)
-                        urls.add(f"{base}{prefix_date}-{filename}")
-                        urls.add(f"{base}{prefix_date}-{slug}.pdf")
-
-    return list(urls)
-
-def download_file_with_progress(url, filepath):
-    os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    filename = os.path.basename(filepath)
-
-    if os.path.exists(filepath):
-        print(f"  {YELLOW}[–] Ya existe en disco:{RESET} {filename}")
-        return True
-
-    try:
-        res = requests.get(url, headers=HEADERS, stream=True, timeout=15)
-        if res.status_code != 200:
-            return False
-
-        total_size = int(res.headers.get('content-length', 0))
-        print(f"  {CYAN}[↓] Descargando:{RESET} {filename}")
+    # Mapeo para Matemáticas
+    if m in ["m1", "m2", "matematica", "matematicas"]:
+        if ano_int <= 2023:
+            return ["matematica"]
+        elif m == "matematicas":
+            return ["m1", "m2"]
+        return [m]
         
-        with open(filepath, "wb") as f:
-            downloaded = 0
-            for chunk in res.iter_content(chunk_size=8192):
-                if chunk:
-                    f.write(chunk)
-                    downloaded += len(chunk)
-                    if total_size > 0:
-                        percent = int((downloaded / total_size) * 100)
-                        mb = downloaded / (1024 * 1024)
-                        sys.stdout.write(f"\r      Progreso: {percent}% ({mb:.2f} MB)")
-                        sys.stdout.flush()
-        print(f"\n  {GREEN}[✓] Guardado con éxito.{RESET}\n")
+    # Mapeo para Lenguaje / Lectura
+    if m in ["lectura", "lenguaje", "competencia lectora", "comprension lectora"]:
+        if ano_int == 2020:
+            return ["lenguaje"]
+        elif ano_int in [2021, 2022, 2023]:
+            return ["comprension-lectora"]
+        else:
+            return ["competencia-lectora"]
+            
+    # CORRECCIÓN RAÍZ 1: 'ciencias' NUNCA incluye ciencias-tp
+    if m in ["ciencias", "ciencia"]:
+        return ["quimica", "fisica", "biologia"]
+        
+    if m in ["quimica", "química"]: return ["quimica"]
+    if m in ["fisica", "física"]: return ["fisica"]
+    if m in ["biologia", "biología"]: return ["biologia"]
+    if m in ["ciencias-tp", "tp", "cienciastp"]: return ["ciencias-tp"]
+    if m == "historia": return ["historia"]
+    
+    return [m]
+
+def obtener_codigos_materia(m, ano_int, tipo):
+    """
+    CORRECCIÓN RAÍZ 2: Generar combinaciones reales de nombres de archivos 
+    según las publicaciones históricas del DEMRE (2020-2024).
+    """
+    codigos = []
+    
+    if m in ["quimica", "fisica", "biologia"]:
+        if tipo == "prueba":
+            if ano_int >= 2024:
+                codigos = [f"ciencias-{m}", m]
+            elif ano_int in [2022, 2023]:
+                # En 2022/2023 la prueba general venía como ciencias o ciencias-materia
+                codigos = [f"ciencias-{m}", "ciencias", m]
+            elif ano_int in [2020, 2021]:
+                # En 2020/2021 la prueba oficial se llamaba modelo-ciencias o modelo-quimica
+                codigos = ["ciencias", m, f"ciencias-{m}"]
+        elif tipo == "clavijero":
+            if ano_int >= 2023:
+                codigos = [f"ciencias-{m}", m]
+            else:
+                # Clavijeros/Resoluciones 2020-2022 solían llamarse resolucion-modelo-ciencias-quimica o resolucion-modelo-quimica
+                codigos = [f"ciencias-{m}", m]
+
+    elif m == "ciencias-tp":
+        if tipo == "prueba":
+            codigos = ["ciencias-tp", "modelo-ciencias-tp"]
+        else:
+            codigos = ["ciencias-tp", "modelo-ciencias-tp"]
+
+    elif m == "m1":
+        codigos = ["matematica1", "m1"]
+    elif m == "m2":
+        codigos = ["matematica2", "m2"]
+    else:
+        codigos = [m]
+
+    return codigos
+
+def generar_urls(ano, materias, tipo):
+    urls = []
+    ano_int = int(ano)
+    domain = "https://historico.demre.cl" if ano_int <= 2024 else "https://demre.cl"
+
+    if ano not in URL_DATABASE:
+        return urls
+
+    periodos = URL_DATABASE[ano]
+
+    for m in materias:
+        m_codes = obtener_codigos_materia(m, ano_int, tipo)
+
+        for periodo, data in periodos.items():
+            fecha = data.get(m, data.get("_todas", None))
+            
+            for m_code in m_codes:
+                if tipo == "prueba":
+                    if ano_int >= 2024:
+                        tag_tipo = f"paes-{periodo}-oficial" if "invierno" in periodo else "paes-regular"
+                        if ano_int == 2024 and periodo == "regular": 
+                            tag_tipo = "paes-regular-oficial"
+                        if fecha:
+                            url = f"{domain}/publicaciones/pdf/{ano}-{fecha[2:]}-{tag_tipo}-{m_code}-p{ano}.pdf"
+                            urls.append((url, periodo, m))
+                    elif ano_int == 2023:
+                        if periodo == "invierno" and fecha:
+                            url = f"{domain}/publicaciones/pdf/{ano}-{fecha[2:]}-pdt-oficial-{m_code}-p{ano}.pdf"
+                            urls.append((url, periodo, m))
+                        elif fecha:
+                            url = f"{domain}/publicaciones/pdf/{ano}-{fecha[2:]}-paes-oficial-{m_code}-p{ano}.pdf"
+                            urls.append((url, periodo, m))
+                    elif ano_int == 2022:
+                        if fecha:
+                            url = f"{domain}/publicaciones/pdf/{ano}-{fecha[2:]}-modelo-{m_code}-p{ano}.pdf"
+                            urls.append((url, periodo, m))
+                    elif ano_int in [2020, 2021]:
+                        if fecha:
+                            url = f"{domain}/publicaciones/pdf/{ano}-{fecha[2:]}-modelo-{m_code}.pdf"
+                            urls.append((url, periodo, m))
+
+                elif tipo in ["clavijero", "respuestas"]:
+                    fecha_clav = data.get("_clavijeros", data.get("_resoluciones", None))
+                    if fecha_clav:
+                        if ano_int >= 2024:
+                            prefix = "clavijero-paes-invierno" if periodo == "invierno" else "clavijero-paes-regular"
+                            url = f"{domain}/publicaciones/pdf/{ano}-{fecha_clav[2:]}-{prefix}-{m_code}.pdf"
+                            urls.append((url, periodo, m))
+                        elif ano_int == 2023:
+                            if periodo == "invierno":
+                                url = f"{domain}/publicaciones/pdf/{ano}-{fecha_clav[2:]}-clavijeropdt-{m_code}.pdf"
+                            else:
+                                url = f"{domain}/publicaciones/pdf/{ano}-{fecha_clav[2:]}-clavijero-paes-{m_code}.pdf"
+                            urls.append((url, periodo, m))
+                        elif ano_int in [2020, 2021, 2022]:
+                            url = f"{domain}/publicaciones/pdf/{ano}-{fecha_clav[2:]}-resolucion-modelo-{m_code}.pdf"
+                            urls.append((url, periodo, m))
+                        
+    return urls
+
+def verificar_url(url):
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    try:
+        with urllib.request.urlopen(req) as response:
+            if response.status == 200:
+                return True
+    except Exception:
+        return False
+    return False
+
+def descargar_archivo(url, destino_path):
+    destino_path.parent.mkdir(parents=True, exist_ok=True)
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    try:
+        with urllib.request.urlopen(req) as response, open(destino_path, 'wb') as out_file:
+            out_file.write(response.read())
         return True
-    except KeyboardInterrupt:
-        raise
-    except Exception as e:
-        print(f"\n  {RED}[✗] Error descargando {filename}: {e}{RESET}\n")
+    except Exception:
         return False
 
-def process_year(year, materia_req, tipo_filter, output_dir):
-    if year in ["2020", "2021", "2022"] and materia_req == "m2":
-        print(f"\n{YELLOW}{BOLD}[!] AVISO:{RESET} {YELLOW}Es posible que te equivocaste al poner el comando, probablemente por que un prefijo no existia historicamente en el contexto de la prueba en aquel año en concreto jeje o_o{RESET}")
-        print(f"{CYAN}    (Buscando la prueba general de matemática disponible para el año {year}...){RESET}\n")
-        materia_req = "m1"
+def procesar_comando(args_list):
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("-a", type=str, required=True)
+    parser.add_argument("-m", type=str, required=True)
+    parser.add_argument("-t", type=str, required=True)
 
-    candidate_urls = generate_urls_for_year(year)
-    if not candidate_urls:
-        return []
+    try:
+        args = parser.parse_args(args_list)
+    except SystemExit:
+        print(MSG_FAIL)
+        return
 
-    filtered_candidates = []
-    for url in candidate_urls:
-        url_lower = url.lower()
+    print(MSG_SEARCHING)
+    time.sleep(1)
 
-        matched_subject = None
-        if materia_req:
-            keywords = SUBJECT_KEYWORDS.get(materia_req, [])
-            if any(kw in url_lower for kw in keywords):
-                matched_subject = SUBJECT_FOLDERS[materia_req]
-            else:
-                continue
-        else:
-            for s_key, keywords in SUBJECT_KEYWORDS.items():
-                if any(kw in url_lower for kw in keywords):
-                    matched_subject = SUBJECT_FOLDERS[s_key]
-                    break
+    tipo_normalizado = "clavijero" if args.t.lower() in ["clavijero", "clavijeros", "respuestas"] else "prueba"
+    materias_normalizadas = normalizar_materia(args.m, args.a)
+    candidatos = generar_urls(args.a, materias_normalizadas, tipo_normalizado)
 
-        if not matched_subject:
-            continue
+    encontrados = []
+    vistos = set()
 
-        category = classify_document(url_lower)
+    for url, periodo, mat in candidatos:
+        if url not in vistos and verificar_url(url):
+            vistos.add(url)
+            encontrados.append((url, periodo, mat))
 
-        if tipo_filter:
-            if tipo_filter == "temarios" and "Temarios" not in category:
-                continue
-            elif tipo_filter == "clavijeros" and not any(k in category for k in ["Clavijeros", "Resolucion"]):
-                continue
-            elif tipo_filter == "modulos" and "Modulos" not in category:
-                continue
-            elif tipo_filter == "resoluciones" and "Resolucion" not in category:
-                continue
-            elif tipo_filter == "pruebas" and not any(k in category for k in ["Pruebas", "Modulos"]):
-                continue
+    if not encontrados:
+        print(MSG_FAIL)
+        return
 
-        filtered_candidates.append((url, matched_subject, category))
+    print(f"\nSe encontraron {len(encontrados)} archivo(s):")
+    for url, periodo, mat in encontrados:
+        print(f" - [{periodo.upper()}] {mat.upper()}: {url}")
 
-    output_year_dir = os.path.join(output_dir, year)
-    found_files = []
-    total_to_check = len(filtered_candidates)
+    confirm = input("\n¿Desea descargarlos? (SI/NO): ").strip().upper()
+    
+    if confirm in ["SI", "S"]:
+        exito = False
+        for url, periodo, mat in encontrados:
+            folder = BASE_DIR / args.a / mat.upper()
+            file_name = f"{tipo_normalizado}_{periodo}_{url.split('/')[-1]}"
+            target_file = folder / file_name
 
-    print(f"Comprobando {total_to_check} enlaces en servidores DEMRE (Año {BOLD}{year}{RESET})...\n")
-    start_time = time.time()
-
-    for idx, (url, matched_subject, category) in enumerate(filtered_candidates, 1):
-        elapsed = int(time.time() - start_time)
-        mins, secs = divmod(elapsed, 60)
-        time_str = f"{mins:02d}:{secs:02d}"
-
-        sys.stdout.write(f"\r{CYAN}[⚙] [{time_str}] Verificando enlace {idx}/{total_to_check}...{RESET}")
-        sys.stdout.flush()
+            if descargar_archivo(url, target_file):
+                print(f" Guardado en: {target_file}")
+                exito = True
         
-        try:
-            res = requests.head(url, headers=HEADERS, timeout=3.5)
-            if res.status_code == 200:
-                filename = os.path.basename(url)
-                target_folder = os.path.join(output_year_dir, matched_subject, category)
-                filepath = os.path.join(target_folder, filename)
-                found_files.append((url, filepath, matched_subject, category, filename))
-        except KeyboardInterrupt:
-            raise
-        except Exception:
-            pass
-
-    sys.stdout.write("\r" + " " * 75 + "\r")
-    sys.stdout.flush()
-
-    return list({f[0]: f for f in found_files}.values())
-
-def print_header():
-    print(f"\n{BOLD}{CYAN}===================================================={RESET}")
-    print(f"{BOLD}{CYAN}Hola, bienvenido al descargador del demre!!!1 :DD{RESET}")
-    print(f"{CYAN}Puedes descargar desde 2025 hasta 2020, para obtener ayuda, escribe el comando \"paes --help\" o hablame jeje :v{RESET}")
-    print(f"{BOLD}{YELLOW}CREDITOS: Elias BISAGRA + Gemini AI XD{RESET}")
-    print(f"{BOLD}{CYAN}===================================================={RESET}\n")
+        if exito:
+            print(f"\n{MSG_SUCCESS}\n")
+        else:
+            print(MSG_FAIL)
+    else:
+        print(f"\n{MSG_CANCEL}\n")
 
 def main():
-    try:
-        # Mostrar cabecera SIEMPRE antes de procesar cualquier argumento
-        print_header()
+    print(MSG_WELCOME)
+    
+    while True:
+        try:
+            user_input = input("PAES> ").strip()
+            if not user_input:
+                continue
 
-        parser = argparse.ArgumentParser(description="Descargador Universal PAES / PDT / PSU DEMRE.")
-        parser.add_argument("-a", "--ano", type=str, default="2025", help="Año específico (2020 a 2026)")
-        parser.add_argument("-m", "--materia", choices=["m1", "m2", "lectora", "historia", "ciencias"], help="Materia específica")
-        parser.add_argument("-t", "--tipo", choices=["pruebas", "clavijeros", "temarios", "modulos", "resoluciones"], help="Filtrar por tipo de documento")
-        parser.add_argument("-A", "--all", action="store_true", help="Descargar TODO el material disponible para el año seleccionado")
-        parser.add_argument("-E", "--everything", action="store_true", help="Descargar TODO el registro histórico (2020 a 2026)")
-        
-        desktop = get_desktop_path()
-        default_out = os.path.join(desktop, "PAES_Descargas")
-        parser.add_argument("-o", "--output", type=str, default=default_out, help="Ruta de destino")
+            if user_input.lower() in ["exit", "quit", "salir"]:
+                break
 
-        if len(sys.argv) == 1:
-            parser.print_help()
-            return
+            if "--help" in user_input or "help" in user_input:
+                print_help()
+                continue
 
-        args = parser.parse_args()
+            if user_input.lower().startswith("paes "):
+                user_input = user_input[5:].strip()
+            elif user_input.lower() == "paes":
+                continue
 
-        all_unique_files = []
+            tokens = shlex.split(user_input)
+            procesar_comando(tokens)
 
-        if args.everything:
-            print(f"{BOLD}{YELLOW}[!] Modo EVERYTHING activado: Se buscarán todos los documentos disponibles entre 2020 y 2026.{RESET}\n")
-            years_to_process = sorted(list(DATES_DB.keys()), reverse=True)
-            for y in years_to_process:
-                files = process_year(y, None, None, args.output)
-                all_unique_files.extend(files)
-        elif args.all:
-            year = args.ano if args.ano else "2025"
-            print(f"{BOLD}{YELLOW}[!] Modo ALL activado para el año {year}: Se buscarán todos las materias y tipos del año.{RESET}\n")
-            files = process_year(year, None, None, args.output)
-            all_unique_files.extend(files)
-        else:
-            files = process_year(args.ano, args.materia, args.tipo, args.output)
-            all_unique_files.extend(files)
-
-        if not all_unique_files:
-            print(f"{RED}Oh... Hubo un error o no pude encontrarlo :\"v{RESET}\n")
-            return
-
-        print(f"{BOLD}Archivos encontrados en total ({len(all_unique_files)}):{RESET}")
-        for idx, (_, _, subj, cat, fname) in enumerate(all_unique_files, 1):
-            print(f" {CYAN}{idx:2d}.{RESET} [{subj} / {cat}] {fname}")
-
-        print(f"\nRuta de destino: {BOLD}{args.output}{RESET}\n")
-
-        confirm = input(f"{BOLD}{YELLOW}¿Deseas proceder con la descarga? [S/n]: {RESET}").strip().lower()
-        if confirm not in ["", "s", "si", "sí", "y", "yes"]:
-            print(f"\n{RED}Operación cancelada por el usuario.{RESET}\n")
-            return
-
-        print(f"\n{BOLD}Iniciando descargas...{RESET}\n")
-        downloaded_count = 0
-        for url, path, _, _, _ in all_unique_files:
-            if download_file_with_progress(url, path):
-                downloaded_count += 1
-
-        if downloaded_count > 0:
-            print(f"\n{BOLD}{GREEN}===================================================={RESET}")
-            print(f"{BOLD}{GREEN}Lo lograste, disfruta y... Estudia!!! <3{RESET}")
-            print(f"{BOLD}{GREEN}===================================================={RESET}\n")
-        else:
-            print(f"{RED}Oh... Hubo un error o no pude encontrarlo :\"v{RESET}\n")
-
-    except KeyboardInterrupt:
-        print(f"\n\n{YELLOW}[!] Operación cancelada por el usuario (Ctrl + C). ¡Hasta luego!{RESET}\n")
-        sys.exit(0)
+        except KeyboardInterrupt:
+            print("\n¡Nos vemos!")
+            break
+        except Exception:
+            print(MSG_FAIL)
 
 if __name__ == "__main__":
     main()
