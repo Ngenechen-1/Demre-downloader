@@ -1,6 +1,6 @@
 # 📚 Descargador Oficial PAES/PDT/PSU DEMRE
 
-Una herramienta CLI en Python para buscar, verificar y descargar de forma automatizada ensayos, modelos de prueba y clavijeros/resoluciones oficiales del DEMRE desde el año 2020 hasta el 2027.
+Una herramienta CLI en Python para buscar, verificar y descargar de forma automatizada ensayos, modelos de prueba y clavijeros/resoluciones oficiales del DEMRE desde el año 2020 hasta el 2027 (este ultimo solo en su formato paes invierno debido a la fecha de publicacion de este programa hecho con ia todo mierdon xdd).
 
 ---
 
