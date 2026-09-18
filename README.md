@@ -1,7 +1,7 @@
 README.md
 Markdown
 
-# 📚 Descargador Oficial de Pruebas DEMRE (PAES / PDT / PSU)
+# 📚 Descargador  de Pruebas Publicadas por el DEMRE (PAES / PDT / PSU)
 
 Herramienta en Python para buscar, verificar y descargar automáticamente modelos de prueba y resoluciones oficiales publicadas por el DEMRE desde el proceso de admisión **2015 hasta 2027**.
 
