@@ -8,8 +8,12 @@ import urllib.request
 import urllib.error
 from pathlib import Path
 
-# --- CONFIGURACIÓN DE RUTAS DE ALMACENAMIENTO ---
-BASE_DIR = Path("DESCARGADOR DEMRE")
+# --- CONFIGURACIÓN DE RUTAS DE ALMACENAMIENTO (SIEMPRE EN EL ESCRITORIO) ---
+desktop_path = Path.home() / "Escritorio"
+if not desktop_path.exists():
+    desktop_path = Path.home() / "Desktop"
+
+BASE_DIR = desktop_path / "DESCARGADOR DEMRE"
 
 # --- MENSAJES Y TEXTOS ESTÉTICOS ---
 MSG_WELCOME = (
@@ -20,7 +24,7 @@ MSG_WELCOME = (
 MSG_SEARCHING = "Espera un poquito..."
 MSG_SUCCESS = "Ke disfruti tu estudio... Supongo uwu"
 MSG_CANCEL = "No se realizara ninguna descarga, dah..."
-MSG_FAIL = "Oh... Tuvimos un problema parece, ve si el formato del comando esta bien puesto o hablame porfiiss..."
+MSG_FAIL = "Oh... Tuvimos un problema parece, ve si el formato del comando esta bien puesta o hablame porfiiss..."
 
 # --- BASE DE DATOS DE URLs SEGÚN EL AÑO Y MATERIA ---
 URL_DATABASE = {
@@ -377,16 +381,14 @@ def generar_urls(ano, materias, tipo):
                             urls.append((url, periodo, m))
                     elif ano_int == 2016:
                         if fecha:
-                            # 2016 varía si la fecha tiene el formato YYYY-YY-MM-DD o YYYY-MM-DD
-                            if len(fecha) == 10 and fecha.startswith("2015-06-1"): # Matematica, Lenguaje e Historia
+                            if len(fecha) == 10 and fecha.startswith("2015-06-1"):
                                 fecha_formateada = f"{fecha[:4]}-{fecha[5:]}"
-                            else: # Ciencias
+                            else:
                                 fecha_formateada = f"{fecha[:4]}-{fecha[2:4]}-{fecha[5:]}"
                             
                             url = f"{domain}/publicaciones/pdf/{ano}-{fecha_formateada}-demre-modelo-{m_code}.pdf"
                             urls.append((url, periodo, m))
                     elif ano_int == 2015:
-                        # En 2015 el link NO lleva la fecha intercalada
                         url = f"{domain}/publicaciones/pdf/2015-demre-modelo-prueba-{m_code}.pdf"
                         urls.append((url, periodo, m))
 
@@ -411,12 +413,10 @@ def generar_urls(ano, materias, tipo):
                             url = f"{domain}/publicaciones/pdf/{ano}-{fecha_clav[2:]}-resolucion-modelo-{m_code}.pdf"
                             urls.append((url, periodo, m))
                         elif ano_int == 2016:
-                            # 2016 resolución lleva doble guión en algunos casos
                             doble_guion = "--" if m == "lenguaje" else "-"
                             url = f"{domain}/publicaciones/pdf/{ano}-{fecha_clav[2:]}{doble_guion}demre-resolucion-modelo-{m_code}.pdf"
                             urls.append((url, periodo, m))
                         elif ano_int == 2015:
-                            # Mapeo de número de resolución para 2015
                             num_res = {
                                 "matematica": "01",
                                 "lenguaje": "02",
