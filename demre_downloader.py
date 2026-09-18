@@ -20,7 +20,7 @@ MSG_WELCOME = (
 MSG_SEARCHING = "Espera un poquito..."
 MSG_SUCCESS = "Ke disfruti tu estudio... Supongo uwu"
 MSG_CANCEL = "No se realizara ninguna descarga, dah..."
-MSG_FAIL = "Oh... Tuvimos un problema parece, ve si el formato del comando esta bien puesta o hablame porfiiss..."
+MSG_FAIL = "Oh... Tuvimos un problema parece, ve si el formato del comando esta bien puesto o hablame porfiiss..."
 
 # --- BASE DE DATOS DE URLs SEGÚN EL AÑO Y MATERIA ---
 URL_DATABASE = {
@@ -142,7 +142,7 @@ URL_DATABASE = {
             "fisica": "2021-07-15",
             "quimica": "2021-07-15",
             "biologia": "2021-07-15",
-            "ciencias": "2021-07-15",
+            "historia": "2021-07-15",
             "_resoluciones": "2021-08-05"
         }
     },
@@ -151,10 +151,10 @@ URL_DATABASE = {
             "quimica": "2020-06-11",
             "fisica": "2020-06-11",
             "biologia": "2020-06-11",
-            "ciencias": "2020-06-11",
             "ciencias-tp": "2020-06-11",
             "comprension-lectora": "2020-06-11",
             "matematica": "2020-06-11",
+            "historia": "2020-06-11",
             "_todas": "2020-06-11",
             "_resoluciones": "2020-07-29"
         }
@@ -164,12 +164,54 @@ URL_DATABASE = {
             "quimica": "2019-08-01",
             "fisica": "2019-08-01",
             "biologia": "2019-08-01",
-            "ciencias": "2019-08-01",
             "ciencias-tp": "2019-08-01",
             "lenguaje": "2019-08-01",
             "matematica": "2019-08-01",
+            "historia": "2019-08-01",
             "_todas": "2019-08-01",
             "_resoluciones": "2019-08-01"
+        }
+    },
+    "2019": {
+        "regular": {
+            "_todas": "2018-07-19",
+            "_resoluciones": "2018-08-02"
+        }
+    },
+    "2018": {
+        "regular": {
+            "_todas": "2017-07-20",
+            "_resoluciones": "2017-07-27"
+        }
+    },
+    "2017": {
+        "regular": {
+            "_todas": "2016-07-14",
+            "_resoluciones": "2016-09-05"
+        }
+    },
+    "2016": {
+        "regular": {
+            "quimica": "2015-06-25",
+            "fisica": "2015-06-25",
+            "biologia": "2015-06-25",
+            "ciencias-tp": "2015-06-25",
+            "historia": "2015-06-18",
+            "matematica": "2015-06-11",
+            "lenguaje": "2015-06-04",
+            "_res_quimica": "2015-08-13",
+            "_res_fisica": "2015-08-13",
+            "_res_biologia": "2015-08-13",
+            "_res_ciencias-tp": "2015-08-13",
+            "_res_historia": "2015-08-06",
+            "_res_matematica": "2015-07-30",
+            "_res_lenguaje": "2015-07-23"
+        }
+    },
+    "2015": {
+        "regular": {
+            "_todas": "2014-08-21",
+            "_resoluciones": "2014-09-01"
         }
     }
 }
@@ -177,7 +219,7 @@ URL_DATABASE = {
 def print_help():
     help_text = """
 GLOSARIO Y MODO DE USO:
-  -a  Año de proceso de admisión (2020 a 2027)
+  -a  Año de proceso de admisión (2015 a 2027)
   -m  Materia a buscar:
       - Lectura / Comprension Lectora / Lenguaje
       - M1 / M2 / Matematica / Matematicas (Generalizador)
@@ -190,10 +232,10 @@ GLOSARIO Y MODO DE USO:
       - clavijero (Busca pautas, claves o resoluciones de módulos)
 
 EJEMPLOS DE USO:
-  -a 2023 -m ciencias -t prueba      (Descarga Química, Física y Biología)
-  -a 2021 -m quimica -t prueba       (Descarga la prueba/modelo de Química)
-  -a 2022 -m ciencias-tp -t prueba   (Descarga únicamente Ciencias TP)
-  -a 2020 -m fisica -t clavijero     (Descarga la resolución de Física)
+  -a 2019 -m ciencias -t prueba      (Descarga Química, Física y Biología 2019)
+  -a 2018 -m ciencias-tp -t clavijero(Descarga la resolución de Ciencias TP 2018)
+  -a 2016 -m lenguaje -t prueba      (Descarga Modelo de Lenguaje 2016)
+  -a 2015 -m matematica -t clavijero (Descarga Resolución de Matemática 2015)
 """
     print(help_text)
 
@@ -211,14 +253,14 @@ def normalizar_materia(materia_raw, ano):
         
     # Mapeo para Lenguaje / Lectura
     if m in ["lectura", "lenguaje", "competencia lectora", "comprension lectora"]:
-        if ano_int == 2020:
+        if ano_int <= 2020:
             return ["lenguaje"]
         elif ano_int in [2021, 2022, 2023]:
             return ["comprension-lectora"]
         else:
             return ["competencia-lectora"]
             
-    # CORRECCIÓN RAÍZ 1: 'ciencias' NUNCA incluye ciencias-tp
+    # 'ciencias' NUNCA incluye ciencias-tp
     if m in ["ciencias", "ciencia"]:
         return ["quimica", "fisica", "biologia"]
         
@@ -226,39 +268,63 @@ def normalizar_materia(materia_raw, ano):
     if m in ["fisica", "física"]: return ["fisica"]
     if m in ["biologia", "biología"]: return ["biologia"]
     if m in ["ciencias-tp", "tp", "cienciastp"]: return ["ciencias-tp"]
-    if m == "historia": return ["historia"]
+    if m in ["historia", "historia-csociales", "hycsoc"]: return ["historia"]
     
     return [m]
 
 def obtener_codigos_materia(m, ano_int, tipo):
-    """
-    CORRECCIÓN RAÍZ 2: Generar combinaciones reales de nombres de archivos 
-    según las publicaciones históricas del DEMRE (2020-2024).
-    """
     codigos = []
     
     if m in ["quimica", "fisica", "biologia"]:
         if tipo == "prueba":
-            if ano_int >= 2024:
+            if ano_int >= 2022:
                 codigos = [f"ciencias-{m}", m]
-            elif ano_int in [2022, 2023]:
-                # En 2022/2023 la prueba general venía como ciencias o ciencias-materia
-                codigos = [f"ciencias-{m}", "ciencias", m]
-            elif ano_int in [2020, 2021]:
-                # En 2020/2021 la prueba oficial se llamaba modelo-ciencias o modelo-quimica
-                codigos = ["ciencias", m, f"ciencias-{m}"]
+            elif ano_int in [2018, 2019]:
+                codigos = [f"ciencias-{m}", f"cs-{m}", m]
+            elif ano_int == 2017:
+                codigos = [m, f"cs-{m}", f"ciencias-{m}"]
+            elif ano_int == 2016:
+                short_m = "cquim" if m == "quimica" else ("cfis" if m == "fisica" else "cbio")
+                codigos = [short_m]
+            elif ano_int == 2015:
+                codigos = [f"ciencias-{m}"]
+            else:
+                codigos = [m, f"ciencias-{m}"]
         elif tipo == "clavijero":
             if ano_int >= 2023:
                 codigos = [f"ciencias-{m}", m]
+            elif ano_int in [2017, 2018, 2019]:
+                codigos = [f"cs-{m}", f"ciencias-{m}", m]
+            elif ano_int == 2016:
+                codigos = [f"cs-{m}"]
+            elif ano_int == 2015:
+                codigos = [f"ciencias-{m}"]
             else:
-                # Clavijeros/Resoluciones 2020-2022 solían llamarse resolucion-modelo-ciencias-quimica o resolucion-modelo-quimica
                 codigos = [f"ciencias-{m}", m]
 
     elif m == "ciencias-tp":
-        if tipo == "prueba":
-            codigos = ["ciencias-tp", "modelo-ciencias-tp"]
+        if ano_int == 2016:
+            codigos = ["ctp"] if tipo == "prueba" else ["cs-tp"]
+        elif ano_int == 2015:
+            codigos = ["ciencias-tecnico-profesional"]
         else:
-            codigos = ["ciencias-tp", "modelo-ciencias-tp"]
+            codigos = ["ciencias-tp"]
+            
+    elif m == "lenguaje":
+        if ano_int == 2017 and tipo == "prueba":
+            codigos = ["lenguaje-comunicacion", "lenguaje"]
+        elif ano_int == 2016:
+            codigos = ["lyc"]
+        else:
+            codigos = ["lenguaje"]
+
+    elif m == "historia":
+        if ano_int == 2017 and tipo == "prueba":
+            codigos = ["historia-csociales", "historia"]
+        elif ano_int == 2016:
+            codigos = ["hycsoc"]
+        else:
+            codigos = ["historia"]
 
     elif m == "m1":
         codigos = ["matematica1", "m1"]
@@ -283,7 +349,10 @@ def generar_urls(ano, materias, tipo):
         m_codes = obtener_codigos_materia(m, ano_int, tipo)
 
         for periodo, data in periodos.items():
-            fecha = data.get(m, data.get("_todas", None))
+            if ano_int == 2016 and tipo in ["clavijero", "respuestas"]:
+                fecha = data.get(f"_res_{m}", None)
+            else:
+                fecha = data.get(m, data.get("_todas", None))
             
             for m_code in m_codes:
                 if tipo == "prueba":
@@ -301,18 +370,33 @@ def generar_urls(ano, materias, tipo):
                         elif fecha:
                             url = f"{domain}/publicaciones/pdf/{ano}-{fecha[2:]}-paes-oficial-{m_code}-p{ano}.pdf"
                             urls.append((url, periodo, m))
-                    elif ano_int == 2022:
+                    elif ano_int in [2017, 2018, 2019, 2020, 2021, 2022]:
                         if fecha:
-                            url = f"{domain}/publicaciones/pdf/{ano}-{fecha[2:]}-modelo-{m_code}-p{ano}.pdf"
+                            fecha_corta = fecha[2:]
+                            url = f"{domain}/publicaciones/pdf/{ano}-{fecha_corta}-modelo-{m_code}.pdf"
                             urls.append((url, periodo, m))
-                    elif ano_int in [2020, 2021]:
+                    elif ano_int == 2016:
                         if fecha:
-                            url = f"{domain}/publicaciones/pdf/{ano}-{fecha[2:]}-modelo-{m_code}.pdf"
+                            # 2016 varía si la fecha tiene el formato YYYY-YY-MM-DD o YYYY-MM-DD
+                            if len(fecha) == 10 and fecha.startswith("2015-06-1"): # Matematica, Lenguaje e Historia
+                                fecha_formateada = f"{fecha[:4]}-{fecha[5:]}"
+                            else: # Ciencias
+                                fecha_formateada = f"{fecha[:4]}-{fecha[2:4]}-{fecha[5:]}"
+                            
+                            url = f"{domain}/publicaciones/pdf/{ano}-{fecha_formateada}-demre-modelo-{m_code}.pdf"
                             urls.append((url, periodo, m))
+                    elif ano_int == 2015:
+                        # En 2015 el link NO lleva la fecha intercalada
+                        url = f"{domain}/publicaciones/pdf/2015-demre-modelo-prueba-{m_code}.pdf"
+                        urls.append((url, periodo, m))
 
                 elif tipo in ["clavijero", "respuestas"]:
-                    fecha_clav = data.get("_clavijeros", data.get("_resoluciones", None))
-                    if fecha_clav:
+                    if ano_int == 2016:
+                        fecha_clav = data.get(f"_res_{m}", None)
+                    else:
+                        fecha_clav = data.get("_clavijeros", data.get("_resoluciones", None))
+                        
+                    if fecha_clav or ano_int == 2015:
                         if ano_int >= 2024:
                             prefix = "clavijero-paes-invierno" if periodo == "invierno" else "clavijero-paes-regular"
                             url = f"{domain}/publicaciones/pdf/{ano}-{fecha_clav[2:]}-{prefix}-{m_code}.pdf"
@@ -323,8 +407,26 @@ def generar_urls(ano, materias, tipo):
                             else:
                                 url = f"{domain}/publicaciones/pdf/{ano}-{fecha_clav[2:]}-clavijero-paes-{m_code}.pdf"
                             urls.append((url, periodo, m))
-                        elif ano_int in [2020, 2021, 2022]:
+                        elif ano_int in [2017, 2018, 2019, 2020, 2021, 2022]:
                             url = f"{domain}/publicaciones/pdf/{ano}-{fecha_clav[2:]}-resolucion-modelo-{m_code}.pdf"
+                            urls.append((url, periodo, m))
+                        elif ano_int == 2016:
+                            # 2016 resolución lleva doble guión en algunos casos
+                            doble_guion = "--" if m == "lenguaje" else "-"
+                            url = f"{domain}/publicaciones/pdf/{ano}-{fecha_clav[2:]}{doble_guion}demre-resolucion-modelo-{m_code}.pdf"
+                            urls.append((url, periodo, m))
+                        elif ano_int == 2015:
+                            # Mapeo de número de resolución para 2015
+                            num_res = {
+                                "matematica": "01",
+                                "lenguaje": "02",
+                                "quimica": "03",
+                                "fisica": "04",
+                                "biologia": "05",
+                                "ciencias-tecnico-profesional": "06",
+                                "historia": "07"
+                            }.get(m_code, "01")
+                            url = f"{domain}/publicaciones/pdf/2015-demre-{num_res}-resolucion-{m_code}.pdf"
                             urls.append((url, periodo, m))
                         
     return urls
