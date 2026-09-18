@@ -238,7 +238,7 @@ GLOSARIO Y MODO DE USO:
 EJEMPLOS DE USO:
   -a 2019 -m ciencias -t prueba      (Descarga Química, Física y Biología 2019)
   -a 2018 -m ciencias-tp -t clavijero(Descarga la resolución de Ciencias TP 2018)
-  -a 2016 -m lenguaje -t prueba      (Descarga Modelo de Lenguaje 2016)
+  -a 2016 -m historia -t prueba      (Descarga Modelo de Historia 2016)
   -a 2015 -m matematica -t clavijero (Descarga Resolución de Matemática 2015)
 """
     print(help_text)
@@ -330,6 +330,12 @@ def obtener_codigos_materia(m, ano_int, tipo):
         else:
             codigos = ["historia"]
 
+    elif m == "matematica":
+        if ano_int == 2016 and tipo == "prueba":
+            codigos = ["matem"]
+        else:
+            codigos = ["matematica"]
+
     elif m == "m1":
         codigos = ["matematica1", "m1"]
     elif m == "m2":
@@ -381,12 +387,16 @@ def generar_urls(ano, materias, tipo):
                             urls.append((url, periodo, m))
                     elif ano_int == 2016:
                         if fecha:
-                            if len(fecha) == 10 and fecha.startswith("2015-06-1"):
-                                fecha_formateada = f"{fecha[:4]}-{fecha[5:]}"
-                            else:
-                                fecha_formateada = f"{fecha[:4]}-{fecha[2:4]}-{fecha[5:]}"
+                            partes_fecha = fecha.split("-")
+                            mes_dia = f"{partes_fecha[1]}-{partes_fecha[2]}"
                             
-                            url = f"{domain}/publicaciones/pdf/{ano}-{fecha_formateada}-demre-modelo-{m_code}.pdf"
+                            # Ciencias 2016 lleva el prefijo "15-" (ej. 2016-15-06-25)
+                            # Historia, Lenguaje y Matemática llevan "06-18", "06-04", "06-11" (ej. 2016-06-18)
+                            if m_code in ["cfis", "cquim", "cbio", "ctp"]:
+                                url = f"{domain}/publicaciones/pdf/{ano}-15-{mes_dia}-demre-modelo-{m_code}.pdf"
+                            else:
+                                url = f"{domain}/publicaciones/pdf/{ano}-{mes_dia}-demre-modelo-{m_code}.pdf"
+                                
                             urls.append((url, periodo, m))
                     elif ano_int == 2015:
                         url = f"{domain}/publicaciones/pdf/2015-demre-modelo-prueba-{m_code}.pdf"
@@ -413,6 +423,7 @@ def generar_urls(ano, materias, tipo):
                             url = f"{domain}/publicaciones/pdf/{ano}-{fecha_clav[2:]}-resolucion-modelo-{m_code}.pdf"
                             urls.append((url, periodo, m))
                         elif ano_int == 2016:
+                            # 2016 resolución lleva doble guión para lenguaje
                             doble_guion = "--" if m == "lenguaje" else "-"
                             url = f"{domain}/publicaciones/pdf/{ano}-{fecha_clav[2:]}{doble_guion}demre-resolucion-modelo-{m_code}.pdf"
                             urls.append((url, periodo, m))
