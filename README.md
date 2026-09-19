@@ -9,7 +9,9 @@ Herramienta en Python para buscar, verificar y descargar automáticamente modelo
 - **Organización automática:** Clasifica las descargas en subcarpetas estructuradas por Año y Materia (`DESCARGADOR DEMRE/AÑO/MATERIA/`).
 
   ACTUALIZACION: AGREGUE FORMATOS NUEVOS PARA DESCARGAR CONTENIDOS
-  COMANDOS MASIVOS:
+  
+  ##COMANDOS MASIVOS:
+  
   --todo-el-ano         Descarga todas las materias y clavijeros de un año (jaja ke chistosooooo dice ano rianse)
                          Ejemplo: -a 2024 --todo-el-ano
 
@@ -19,7 +21,7 @@ Herramienta en Python para buscar, verificar y descargar automáticamente modelo
 --todos-los-clavijeros# Descarga sólo los clavijeros/pautas de todos los años.
                          Ejemplo: --todos-los-clavijeros
 
-  --descargar-todo3       Descarga TODO el archivo histórico del DEMRE (2015-2027).
+  --descargar-todo      Descarga TODO el archivo histórico del DEMRE (2015-2027).
                          Ejemplo: --descargar-todo
                          Filtros opcionales:
                            --descargar-todo --solo-pruebas
