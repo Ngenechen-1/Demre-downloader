@@ -10,7 +10,7 @@ Herramienta en Python para buscar, verificar y descargar automáticamente modelo
 
   ACTUALIZACION: AGREGUE FORMATOS NUEVOS PARA DESCARGAR CONTENIDOS
   
-  ##COMANDOS MASIVOS:
+  ## COMANDOS MASIVOS:
   
   --todo-el-ano         Descarga todas las materias y clavijeros de un año (jaja ke chistosooooo dice ano rianse)
                          Ejemplo: -a 2024 --todo-el-ano
