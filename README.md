@@ -26,6 +26,8 @@ Herramienta en Python para buscar, verificar y descargar automáticamente modelo
                          
   ## Filtros opcionales:
  --descargar-todo --solo-pruebas
+
+ 
  --descargar-todo --solo-clavijeros
 
 
