@@ -6,25 +6,50 @@ import argparse
 import shlex
 import urllib.request
 import urllib.error
+import random
 from pathlib import Path
 
-# --- CONFIGURACIÓN DE RUTAS DE ALMACENAMIENTO (SIEMPRE EN EL ESCRITORIO) ---
-desktop_path = Path.home() / "Escritorio"
-if not desktop_path.exists():
-    desktop_path = Path.home() / "Desktop"
+# --- CONFIGURACIÓN DE RUTAS DE ALMACENAMIENTO (MULTIPLATAFORMA) ---
+if "com.termux" in os.environ.get("PREFIX", ""):
+    BASE_DIR = Path.home() / "storage" / "downloads" / "DESCARGADOR DEMRE"
+else:
+    desktop_path = Path.home() / "Escritorio"
+    if not desktop_path.exists():
+        desktop_path = Path.home() / "Desktop"
+    BASE_DIR = desktop_path / "DESCARGADOR DEMRE"
 
-BASE_DIR = desktop_path / "DESCARGADOR DEMRE"
+# --- EASTER EGGS Y TEXTOS ESTÉTICOS ---
+EASTER_EGGS = [
+    "Un gran poder conlleva una gran responsabilidad... de estudiar para la PAES xDxDxd ohh fome kl...",
+    "El DEMRE no quiere que tengas este script, pero acá estamos jejeje",
+    "hkey seria bakan que esta wea geniunamente aporte a un futuro puntaje nacional",
+    "yendo por... un desayuno con el presidente? puff ke penca",
+    "los quiero mucho, en serio <3",
+    "¡Sácate un puntajeazo po!1",
+    "me siento weon al extrañar a alguien que por supuesto no le intereso, nunca se obsesionen por weas cabros",
+    "like si lees esto Bv",
+    "saludame!!! si me encontrai mejor, solo dime hola como estai elias ke tal tu vida",
+    ":v",
+    "uwu",
+]
 
-# --- MENSAJES Y TEXTOS ESTÉTICOS ---
 MSG_WELCOME = (
     "Holaaa, bienvenido al descargador de pruebas de la paes del demre :DD\n"
-    "Escribe -- help si requieres ayuda o... Hablame po!!1\n"
+    
+    f"Mensaje random: \"{random.choice(EASTER_EGGS)}\"\n"
+    
+    "Escribe <<help>> si requieres ayuda o... hablame po!!1\n"
+    
     "-CREDITOS: ELIAS BISAGRA Y GEMINI AI XDDD\n"
 )
-MSG_SEARCHING = "Espera un poquito..."
+MSG_SEARCHING = "Espera un poquito, procesando descarga..."
 MSG_SUCCESS = "Ke disfruti tu estudio... Supongo uwu"
 MSG_CANCEL = "No se realizara ninguna descarga, dah..."
-MSG_FAIL = "Oh... Tuvimos un problema parece, ve si el formato del comando esta bien puesta o hablame porfiiss..."
+MSG_FAIL = "Oh... Tuvimos un problema parece, ve si el formato del comando esta bien puesto o hablame porfiiss..."
+
+# --- LISTA DE AÑOS Y MATERIAS VÁLIDAS PARA BÚSQUEDAS MASIVAS ---
+TODOS_LOS_ANOS = [str(a) for a in range(2015, 2027)]
+TODAS_LAS_MATERIAS_BASE = ["m1", "m2", "lenguaje", "historia", "quimica", "fisica", "biologia", "ciencias-tp"]
 
 # --- BASE DE DATOS DE URLs SEGÚN EL AÑO Y MATERIA ---
 URL_DATABASE = {
@@ -223,23 +248,29 @@ URL_DATABASE = {
 def print_help():
     help_text = """
 GLOSARIO Y MODO DE USO:
-  -a  Año de proceso de admisión (2015 a 2027)
-  -m  Materia a buscar:
-      - Lectura / Comprension Lectora / Lenguaje
-      - M1 / M2 / Matematica / Matematicas (Generalizador)
-      - Historia
-      - Ciencias (Generalizador solo para Química, Física y Biología)
-      - Quimica / Fisica / Biologia (Menciones independientes)
-      - Ciencias-TP / TP / Cienciastp (Módulo Técnico Profesional independiente)
-  -t  Tipo de archivo:
-      - prueba (Busca la prueba completa, incluye Regular e Invierno)
-      - clavijero (Busca pautas, claves o resoluciones de módulos)
 
-EJEMPLOS DE USO:
-  -a 2019 -m ciencias -t prueba      (Descarga Química, Física y Biología 2019)
-  -a 2018 -m ciencias-tp -t clavijero(Descarga la resolución de Ciencias TP 2018)
-  -a 2016 -m historia -t prueba      (Descarga Modelo de Historia 2016)
-  -a 2015 -m matematica -t clavijero (Descarga Resolución de Matemática 2015)
+BÚSQUEDAS INDIVIDUALES:
+  -a  Año de proceso de admisión (2015 a 2027)
+  -m  Materia a buscar (m1, m2, ciencias, lenguaje, historia, etc.)
+  -t  Tipo de archivo (prueba / clavijero)
+  
+ejemplo -a 2024 -m historia -t prueba
+
+COMANDOS MASIVOS:
+  --todo-el-ano          Descarga todas las materias y clavijeros de un año (jaja ke chistosooooo dice ano rianse)
+                         Ejemplo: -a 2024 --todo-el-ano
+
+  --toda-la-materia      Descarga una materia de TODOS los años (2015-2027).
+                         Ejemplo: -m ciencias --toda-la-materia
+
+  --todos-los-clavijeros Descarga sólo los clavijeros/pautas de todos los años.
+                         Ejemplo: --todos-los-clavijeros
+
+  --descargar-todo       Descarga TODO el archivo histórico del DEMRE (2015-2027).
+                         Ejemplo: --descargar-todo
+                         Filtros opcionales:
+                           --descargar-todo --solo-pruebas
+                           --descargar-todo --solo-clavijeros
 """
     print(help_text)
 
@@ -247,7 +278,6 @@ def normalizar_materia(materia_raw, ano):
     m = materia_raw.lower().strip()
     ano_int = int(ano)
     
-    # Mapeo para Matemáticas
     if m in ["m1", "m2", "matematica", "matematicas"]:
         if ano_int <= 2023:
             return ["matematica"]
@@ -255,7 +285,6 @@ def normalizar_materia(materia_raw, ano):
             return ["m1", "m2"]
         return [m]
         
-    # Mapeo para Lenguaje / Lectura
     if m in ["lectura", "lenguaje", "competencia lectora", "comprension lectora"]:
         if ano_int <= 2020:
             return ["lenguaje"]
@@ -264,7 +293,6 @@ def normalizar_materia(materia_raw, ano):
         else:
             return ["competencia-lectora"]
             
-    # 'ciencias' NUNCA incluye ciencias-tp
     if m in ["ciencias", "ciencia"]:
         return ["quimica", "fisica", "biologia"]
         
@@ -372,35 +400,33 @@ def generar_urls(ano, materias, tipo):
                             tag_tipo = "paes-regular-oficial"
                         if fecha:
                             url = f"{domain}/publicaciones/pdf/{ano}-{fecha[2:]}-{tag_tipo}-{m_code}-p{ano}.pdf"
-                            urls.append((url, periodo, m))
+                            urls.append((url, periodo, m, ano, tipo))
                     elif ano_int == 2023:
                         if periodo == "invierno" and fecha:
                             url = f"{domain}/publicaciones/pdf/{ano}-{fecha[2:]}-pdt-oficial-{m_code}-p{ano}.pdf"
-                            urls.append((url, periodo, m))
+                            urls.append((url, periodo, m, ano, tipo))
                         elif fecha:
                             url = f"{domain}/publicaciones/pdf/{ano}-{fecha[2:]}-paes-oficial-{m_code}-p{ano}.pdf"
-                            urls.append((url, periodo, m))
+                            urls.append((url, periodo, m, ano, tipo))
                     elif ano_int in [2017, 2018, 2019, 2020, 2021, 2022]:
                         if fecha:
                             fecha_corta = fecha[2:]
                             url = f"{domain}/publicaciones/pdf/{ano}-{fecha_corta}-modelo-{m_code}.pdf"
-                            urls.append((url, periodo, m))
+                            urls.append((url, periodo, m, ano, tipo))
                     elif ano_int == 2016:
                         if fecha:
                             partes_fecha = fecha.split("-")
                             mes_dia = f"{partes_fecha[1]}-{partes_fecha[2]}"
                             
-                            # Ciencias 2016 lleva el prefijo "15-" (ej. 2016-15-06-25)
-                            # Historia, Lenguaje y Matemática llevan "06-18", "06-04", "06-11" (ej. 2016-06-18)
                             if m_code in ["cfis", "cquim", "cbio", "ctp"]:
                                 url = f"{domain}/publicaciones/pdf/{ano}-15-{mes_dia}-demre-modelo-{m_code}.pdf"
                             else:
                                 url = f"{domain}/publicaciones/pdf/{ano}-{mes_dia}-demre-modelo-{m_code}.pdf"
                                 
-                            urls.append((url, periodo, m))
+                            urls.append((url, periodo, m, ano, tipo))
                     elif ano_int == 2015:
                         url = f"{domain}/publicaciones/pdf/2015-demre-modelo-prueba-{m_code}.pdf"
-                        urls.append((url, periodo, m))
+                        urls.append((url, periodo, m, ano, tipo))
 
                 elif tipo in ["clavijero", "respuestas"]:
                     if ano_int == 2016:
@@ -412,21 +438,20 @@ def generar_urls(ano, materias, tipo):
                         if ano_int >= 2024:
                             prefix = "clavijero-paes-invierno" if periodo == "invierno" else "clavijero-paes-regular"
                             url = f"{domain}/publicaciones/pdf/{ano}-{fecha_clav[2:]}-{prefix}-{m_code}.pdf"
-                            urls.append((url, periodo, m))
+                            urls.append((url, periodo, m, ano, tipo))
                         elif ano_int == 2023:
                             if periodo == "invierno":
                                 url = f"{domain}/publicaciones/pdf/{ano}-{fecha_clav[2:]}-clavijeropdt-{m_code}.pdf"
                             else:
                                 url = f"{domain}/publicaciones/pdf/{ano}-{fecha_clav[2:]}-clavijero-paes-{m_code}.pdf"
-                            urls.append((url, periodo, m))
+                            urls.append((url, periodo, m, ano, tipo))
                         elif ano_int in [2017, 2018, 2019, 2020, 2021, 2022]:
                             url = f"{domain}/publicaciones/pdf/{ano}-{fecha_clav[2:]}-resolucion-modelo-{m_code}.pdf"
-                            urls.append((url, periodo, m))
+                            urls.append((url, periodo, m, ano, tipo))
                         elif ano_int == 2016:
-                            # 2016 resolución lleva doble guión para lenguaje
                             doble_guion = "--" if m == "lenguaje" else "-"
                             url = f"{domain}/publicaciones/pdf/{ano}-{fecha_clav[2:]}{doble_guion}demre-resolucion-modelo-{m_code}.pdf"
-                            urls.append((url, periodo, m))
+                            urls.append((url, periodo, m, ano, tipo))
                         elif ano_int == 2015:
                             num_res = {
                                 "matematica": "01",
@@ -438,7 +463,7 @@ def generar_urls(ano, materias, tipo):
                                 "historia": "07"
                             }.get(m_code, "01")
                             url = f"{domain}/publicaciones/pdf/2015-demre-{num_res}-resolucion-{m_code}.pdf"
-                            urls.append((url, periodo, m))
+                            urls.append((url, periodo, m, ano, tipo))
                         
     return urls
 
@@ -464,9 +489,18 @@ def descargar_archivo(url, destino_path):
 
 def procesar_comando(args_list):
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("-a", type=str, required=True)
-    parser.add_argument("-m", type=str, required=True)
-    parser.add_argument("-t", type=str, required=True)
+    
+    parser.add_argument("-a", type=str, required=False)
+    parser.add_argument("-m", type=str, required=False)
+    parser.add_argument("-t", type=str, required=False)
+
+    parser.add_argument("--todo-el-ano", action="store_true")
+    parser.add_argument("--toda-la-materia", action="store_true")
+    parser.add_argument("--todos-los-clavijeros", action="store_true")
+    parser.add_argument("--descargar-todo", action="store_true")
+    
+    parser.add_argument("--solo-pruebas", action="store_true")
+    parser.add_argument("--solo-clavijeros", action="store_true")
 
     try:
         args = parser.parse_args(args_list)
@@ -474,36 +508,81 @@ def procesar_comando(args_list):
         print(MSG_FAIL)
         return
 
+    candidatos = []
+
+    if args.descargar_todo:
+        tipos = ["prueba", "clavijero"]
+        if args.solo_pruebas:
+            tipos = ["prueba"]
+        elif args.solo_clavijeros:
+            tipos = ["clavijero"]
+
+        for ano_item in TODOS_LOS_ANOS:
+            for mat_item in TODAS_LAS_MATERIAS_BASE:
+                m_norm = normalizar_materia(mat_item, ano_item)
+                for t_item in tipos:
+                    candidatos.extend(generar_urls(ano_item, m_norm, t_item))
+
+    elif args.todos_los_clavijeros:
+        for ano_item in TODOS_LOS_ANOS:
+            for mat_item in TODAS_LAS_MATERIAS_BASE:
+                m_norm = normalizar_materia(mat_item, ano_item)
+                candidatos.extend(generar_urls(ano_item, m_norm, "clavijero"))
+
+    elif args.todo_el_ano:
+        if not args.a:
+            print("\nError: Para usar --todo-el-ano debes especificar el año con -a (Ejemplo: -a 2024 --todo-el-ano)\n")
+            return
+        for mat_item in TODAS_LAS_MATERIAS_BASE:
+            m_norm = normalizar_materia(mat_item, args.a)
+            for t_item in ["prueba", "clavijero"]:
+                candidatos.extend(generar_urls(args.a, m_norm, t_item))
+
+    elif args.toda-la-materia:
+        if not args.m:
+            print("\nError: Para usar --toda-la-materia debes especificar la materia con -m (Ejemplo: -m ciencias --toda-la-materia)\n")
+            return
+        for ano_item in TODOS_LOS_ANOS:
+            m_norm = normalizar_materia(args.m, ano_item)
+            for t_item in ["prueba", "clavijero"]:
+                candidatos.extend(generar_urls(args.m, m_norm, t_item))
+
+    else:
+        if not (args.a and args.m and args.t):
+            print(MSG_FAIL)
+            return
+
+        tipo_normalizado = "clavijero" if args.t.lower() in ["clavijero", "clavijeros", "respuestas"] else "prueba"
+        materias_normalizadas = normalizar_materia(args.m, args.a)
+        candidatos = generar_urls(args.a, materias_normalizadas, tipo_normalizado)
+
     print(MSG_SEARCHING)
     time.sleep(1)
-
-    tipo_normalizado = "clavijero" if args.t.lower() in ["clavijero", "clavijeros", "respuestas"] else "prueba"
-    materias_normalizadas = normalizar_materia(args.m, args.a)
-    candidatos = generar_urls(args.a, materias_normalizadas, tipo_normalizado)
 
     encontrados = []
     vistos = set()
 
-    for url, periodo, mat in candidatos:
+    for item in candidatos:
+        url, periodo, mat, ano_f, tipo_f = item
         if url not in vistos and verificar_url(url):
             vistos.add(url)
-            encontrados.append((url, periodo, mat))
+            encontrados.append(item)
 
     if not encontrados:
         print(MSG_FAIL)
         return
 
     print(f"\nSe encontraron {len(encontrados)} archivo(s):")
-    for url, periodo, mat in encontrados:
-        print(f" - [{periodo.upper()}] {mat.upper()}: {url}")
+    for url, periodo, mat, ano_f, tipo_f in encontrados:
+        print(f" - [{ano_f}] [{periodo.upper()}] {mat.upper()} ({tipo_f.upper()}): {url}")
 
-    confirm = input("\n¿Desea descargarlos? (SI/NO): ").strip().upper()
+    confirm = input(f"\n¿Desea descargar estos {len(encontrados)} archivos? (SI/NO): ").strip().upper()
     
     if confirm in ["SI", "S"]:
         exito = False
-        for url, periodo, mat in encontrados:
-            folder = BASE_DIR / args.a / mat.upper()
-            file_name = f"{tipo_normalizado}_{periodo}_{url.split('/')[-1]}"
+        for url, periodo, mat, ano_f, tipo_f in encontrados:
+            folder = BASE_DIR / ano_f / mat.upper()
+            file_name = f"{tipo_f}_{periodo}_{url.split('/')[-1]}"
             target_file = folder / file_name
 
             if descargar_archivo(url, target_file):
