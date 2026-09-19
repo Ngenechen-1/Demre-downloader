@@ -23,9 +23,10 @@ Herramienta en Python para buscar, verificar y descargar automáticamente modelo
 
   --descargar-todo      Descarga TODO el archivo histórico del DEMRE (2015-2027).
                          Ejemplo: --descargar-todo
-                         Filtros opcionales:
-                           --descargar-todo --solo-pruebas
-                           --descargar-todo --solo-clavijeros
+                         
+  ## Filtros opcionales:
+ --descargar-todo --solo-pruebas
+ --descargar-todo --solo-clavijeros
 
 
 
