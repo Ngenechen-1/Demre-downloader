@@ -1,6 +1,3 @@
-README.md
-Markdown
-
 # 📚 Descargador  de Pruebas Publicadas por el DEMRE (PAES / PDT / PSU)
 
 Herramienta en Python para buscar, verificar y descargar automáticamente modelos de prueba y resoluciones oficiales publicadas por el DEMRE desde el proceso de admisión **2015 hasta 2027**.
@@ -11,6 +8,22 @@ Herramienta en Python para buscar, verificar y descargar automáticamente modelo
 - **Verificación en tiempo real:** Comprueba que los archivos PDF existan en los servidores del DEMRE antes de descargar.
 - **Organización automática:** Clasifica las descargas en subcarpetas estructuradas por Año y Materia (`DESCARGADOR DEMRE/AÑO/MATERIA/`).
 
+  ACTUALIZACION: AGREGUE FORMATOS NUEVOS PARA DESCARGAR CONTENIDOS
+  COMANDOS MASIVOS:
+  --todo-el-ano          Descarga todas las materias y clavijeros de un año (jaja ke chistosooooo dice ano rianse)
+                         Ejemplo: -a 2024 --todo-el-ano
+
+  --toda-la-materia      Descarga una materia de TODOS los años (2015-2027).
+                         Ejemplo: -m ciencias --toda-la-materia
+
+  --todos-los-clavijeros Descarga sólo los clavijeros/pautas de todos los años.
+                         Ejemplo: --todos-los-clavijeros
+
+  --descargar-todo       Descarga TODO el archivo histórico del DEMRE (2015-2027).
+                         Ejemplo: --descargar-todo
+                         Filtros opcionales:
+                           --descargar-todo --solo-pruebas
+                           --descargar-todo --solo-clavijeros
 ---
 
 ## 🛠️ Requisitos
@@ -23,7 +36,7 @@ Herramienta en Python para buscar, verificar y descargar automáticamente modelo
 
 Ejecuta el script interactivo desde tu terminal o consola:
 
-```bash
+
 python paes-tracker.py
 
 Una vez iniciado el programa (PAES>), puedes ingresar comandos con la siguiente estructura:
@@ -34,7 +47,7 @@ Bash
 Parámetros
 
     -a: Año del proceso de admisión (2015 a 2027).
-
+    
     -m: Materia o módulo a buscar:
 
         lectura / lenguaje / competencia lectora / comprension lectora
@@ -56,7 +69,6 @@ Parámetros
         clavijero (Pautas, claves o resoluciones explicadas)
 
 📋 Ejemplos de Comandos
-Bash
 
 PAES> -a 2025 -m m1 -t prueba
 PAES> -a 2022 -m ciencias -t prueba
