@@ -20,7 +20,7 @@ else:
 
 # --- EASTER EGGS Y TEXTOS ESTÉTICOS ---
 EASTER_EGGS = [
-    "Un gran poder conlleva una gran responsabilidad... de estudiar para la PAES xDxDxd ohh fome kl...",
+      "Un gran poder conlleva una gran responsabilidad... de estudiar para la PAES xDxDxd ohh fome kl...",
     "El DEMRE no quiere que tengas este script, pero acá estamos jejeje",
     "hkey seria bakan que esta wea geniunamente aporte a un futuro puntaje nacional",
     "yendo por... un desayuno con el presidente? puff ke penca",
@@ -35,11 +35,8 @@ EASTER_EGGS = [
 
 MSG_WELCOME = (
     "Holaaa, bienvenido al descargador de pruebas de la paes del demre :DD\n"
-    
-    f"Mensaje random: \"{random.choice(EASTER_EGGS)}\"\n"
-    
-    "Escribe <<help>> si requieres ayuda o... hablame po!!1\n"
-    
+    f"Mensaje del día: \"{random.choice(EASTER_EGGS)}\"\n"
+    "Escribe --help si requieres ayuda o... Hablame po!!1\n"
     "-CREDITOS: ELIAS BISAGRA Y GEMINI AI XDDD\n"
 )
 MSG_SEARCHING = "Espera un poquito, procesando descarga..."
@@ -48,7 +45,7 @@ MSG_CANCEL = "No se realizara ninguna descarga, dah..."
 MSG_FAIL = "Oh... Tuvimos un problema parece, ve si el formato del comando esta bien puesto o hablame porfiiss..."
 
 # --- LISTA DE AÑOS Y MATERIAS VÁLIDAS PARA BÚSQUEDAS MASIVAS ---
-TODOS_LOS_ANOS = [str(a) for a in range(2015, 2027)]
+TODOS_LOS_ANOS = [str(a) for a in range(2015, 2028)]
 TODAS_LAS_MATERIAS_BASE = ["m1", "m2", "lenguaje", "historia", "quimica", "fisica", "biologia", "ciencias-tp"]
 
 # --- BASE DE DATOS DE URLs SEGÚN EL AÑO Y MATERIA ---
@@ -251,10 +248,8 @@ GLOSARIO Y MODO DE USO:
 
 BÚSQUEDAS INDIVIDUALES:
   -a  Año de proceso de admisión (2015 a 2027)
-  -m  Materia a buscar (m1, m2, ciencias, lenguaje, historia, etc.)
+  -m  Materia a buscar (matematicas, m1, m2, ciencias, fisica, quimica, biologia,lenguaje, historia)
   -t  Tipo de archivo (prueba / clavijero)
-  
-ejemplo -a 2024 -m historia -t prueba
 
 COMANDOS MASIVOS:
   --todo-el-ano          Descarga todas las materias y clavijeros de un año (jaja ke chistosooooo dice ano rianse)
@@ -538,14 +533,14 @@ def procesar_comando(args_list):
             for t_item in ["prueba", "clavijero"]:
                 candidatos.extend(generar_urls(args.a, m_norm, t_item))
 
-    elif args.toda-la-materia:
+    elif args.toda_la_materia:  # <-- AQUÍ ESTABA EL ERROR (AQUÍ TENÍA UN GUIONAL MEDIO EN VEZ DE GUION BAJO)
         if not args.m:
             print("\nError: Para usar --toda-la-materia debes especificar la materia con -m (Ejemplo: -m ciencias --toda-la-materia)\n")
             return
         for ano_item in TODOS_LOS_ANOS:
             m_norm = normalizar_materia(args.m, ano_item)
             for t_item in ["prueba", "clavijero"]:
-                candidatos.extend(generar_urls(args.m, m_norm, t_item))
+                candidatos.extend(generar_urls(ano_item, m_norm, t_item))
 
     else:
         if not (args.a and args.m and args.t):
